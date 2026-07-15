@@ -84,9 +84,8 @@ public class FallbackAiProvider : IAiProvider, ICommandAiProvider
         // Formulate target URL
         var targetUrl = urlTemplate.Replace("{model}", model).Replace("{apiKey}", apiKey);
         
-        // Handle Gemini or CommandAi format
-        if (providerName.Equals("Gemini", StringComparison.OrdinalIgnoreCase) || 
-            providerName.Equals("CommandAi", StringComparison.OrdinalIgnoreCase))
+        // Handle Gemini format
+        if (providerName.Equals("Gemini", StringComparison.OrdinalIgnoreCase))
         {
             var payload = new
             {
@@ -118,8 +117,9 @@ public class FallbackAiProvider : IAiProvider, ICommandAiProvider
                 .GetString()?.Trim() ?? string.Empty;
         }
         
-        // Handle OpenAI format (ChatGPT) or OpenRouter format (OpenCode)
+        // Handle OpenAI format (ChatGPT, CommandAi) or OpenRouter format (OpenCode)
         if (providerName.Equals("ChatGPT", StringComparison.OrdinalIgnoreCase) || 
+            providerName.Equals("CommandAi", StringComparison.OrdinalIgnoreCase) || 
             providerName.Equals("OpenCode", StringComparison.OrdinalIgnoreCase))
         {
             var payload = new
