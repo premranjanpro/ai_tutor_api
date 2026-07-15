@@ -1,5 +1,9 @@
 using FamilyAI.Api.Middlewares;
+using FamilyAI.Application.Common.Interfaces;
+using FamilyAI.Infrastructure.Authentication;
+using FamilyAI.Infrastructure.AI;
 using FamilyAI.Infrastructure.Persistence;
+using FamilyAI.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -21,7 +25,15 @@ try
 
     // Add Services to the container
     builder.Services.AddControllers();
-    
+    builder.Services.AddHttpClient(); // Add HttpClientFactory
+
+    // Register Application Services
+    builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+    builder.Services.AddScoped<IAuthService, AuthService>();
+    builder.Services.AddScoped<IFamilyService, FamilyService>();
+    builder.Services.AddScoped<IAiProvider, GeminiProvider>();
+    builder.Services.AddScoped<IAiOrchestrator, AiOrchestrator>();
+
     // Register DbContext conditionally
     var dbProvider = builder.Configuration.GetValue<string>("DbProvider") ?? "PostgreSQL";
     builder.Services.AddDbContext<AppDbContext>(options =>
@@ -57,6 +69,22 @@ try
     app.UseAuthorization();
 
     app.MapControllers();
+
+    // Initialize Database
+    using (var scope = app.Services.CreateScope())
+    {
+        var services = scope.ServiceProvider;
+        try
+        {
+            var context = services.GetRequiredService<AppDbContext>();
+            await DbInitializer.InitializeAsync(context);
+            Log.Information("Database initialized successfully.");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "An error occurred while initializing the database.");
+        }
+    }
 
     app.Run();
 }
