@@ -18,11 +18,13 @@ public class ConversationController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly IAiOrchestrator _aiOrchestrator;
+    private readonly IIntentParser _intentParser;
 
-    public ConversationController(AppDbContext context, IAiOrchestrator aiOrchestrator)
+    public ConversationController(AppDbContext context, IAiOrchestrator aiOrchestrator, IIntentParser intentParser)
     {
         _context = context;
         _aiOrchestrator = aiOrchestrator;
+        _intentParser = intentParser;
     }
 
     [HttpPost]
@@ -69,6 +71,34 @@ public class ConversationController : ControllerBase
     [HttpPost("{id}/messages")]
     public async Task<ActionResult<ApiResponse<string>>> SendMessage(Guid id, [FromBody] SendMessageRequest request, CancellationToken cancellationToken)
     {
+        // First run the intent parser
+        var parsed = _intentParser.ParseIntent(request.MessageText);
+        if (parsed.IsCommand)
+        {
+            var responseText = $"COMMAND:{parsed.CommandType}:{parsed.Target}|{parsed.CustomResponse}";
+
+            // Save messages to database to preserve history log
+            var userMsg = new ConversationMessage
+            {
+                SessionId = id,
+                SenderType = SenderType.User,
+                MessageText = request.MessageText,
+                MessageType = MessageType.Text
+            };
+            var aiMsg = new ConversationMessage
+            {
+                SessionId = id,
+                SenderType = SenderType.Ai,
+                MessageText = responseText,
+                MessageType = MessageType.Text
+            };
+
+            await _context.ConversationMessages.AddRangeAsync(new[] { userMsg, aiMsg }, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            return Ok(ApiResponse<string>.SuccessResponse(responseText, "Command intent parsed successfully."));
+        }
+
         var response = await _aiOrchestrator.SendMessageAsync(id, request.MessageText, cancellationToken);
         if (!response.Success)
         {
