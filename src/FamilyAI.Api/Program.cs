@@ -31,8 +31,9 @@ try
     builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
     builder.Services.AddScoped<IAuthService, AuthService>();
     builder.Services.AddScoped<IFamilyService, FamilyService>();
-    builder.Services.AddScoped<IAiProvider, GeminiProvider>();
-    builder.Services.AddScoped<ICommandAiProvider, CommandAiProvider>();
+    builder.Services.AddScoped<FallbackAiProvider>();
+    builder.Services.AddScoped<IAiProvider>(sp => sp.GetRequiredService<FallbackAiProvider>());
+    builder.Services.AddScoped<ICommandAiProvider>(sp => sp.GetRequiredService<FallbackAiProvider>());
     builder.Services.AddScoped<IAiOrchestrator, AiOrchestrator>();
     builder.Services.AddScoped<IIntentParser, IntentParser>();
 
