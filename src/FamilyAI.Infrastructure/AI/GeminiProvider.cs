@@ -27,8 +27,8 @@ public class GeminiProvider : IAiProvider
 
     public async Task<string> CompleteAsync(string systemPrompt, string userPrompt, CancellationToken cancellationToken)
     {
-        var apiKey = _config["AiSettings:Gemini:ApiKey"] ?? Environment.GetEnvironmentVariable("AI__GEMINI__APIKEY");
-        var model = _config["AiSettings:Gemini:Model"] ?? "gemini-1.5-flash";
+        var apiKey = _config["Gemini:ApiKey"] ?? _config["AiSettings:Gemini:ApiKey"] ?? Environment.GetEnvironmentVariable("AI__GEMINI__APIKEY");
+        var model = _config["Gemini:Model"] ?? _config["AiSettings:Gemini:Model"] ?? "gemini-2.5-flash";
 
         if (string.IsNullOrWhiteSpace(apiKey))
         {
