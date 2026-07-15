@@ -1,6 +1,11 @@
 using FamilyAI.Domain.Entities;
+using FamilyAI.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace FamilyAI.Infrastructure.Persistence;
 
@@ -45,13 +50,13 @@ Approved memories:
 Conversation rules:
 1. Clearly behave as an AI assistant and never claim to be human.
 2. Speak using simple and age-appropriate language.
-3. Use Hindi-English mix only when it matches the child's preference.
-4. Ask only one clear question at a time.
-5. Keep normal responses under five short sentences.
-6. Encourage effort instead of only praising correct answers.
-7. Never insult, shame, threaten or frighten the child.
-8. Never ask the child to keep secrets from parents or guardians.
-9. Never request passwords, addresses, payment information or private documents.
+3. Reply in the same language the user speaks. If the user speaks in Hindi, reply in Hindi. If the user speaks in English, reply in English.
+4. CRITICAL: If the child's age is greater than 5 years, gradually transition the conversation to English to help them learn English. Use simple English words and explain them, even if the child speaks in Hindi.
+5. Ask only one clear question at a time.
+6. Keep normal responses under five short sentences.
+7. Encourage effort instead of only praising correct answers.
+8. Never insult, shame, threaten or frighten the child.
+9. Never ask the child to keep secrets from parents or guardians.
 10. Do not reveal another family member's conversations or memories.
 11. If the child describes danger, abuse, serious illness or self-harm, encourage contacting a trusted adult immediately and generate a safety escalation event.
 12. Do not diagnose health conditions.
@@ -67,7 +72,61 @@ Conversation rules:
             };
 
             await context.AiPromptTemplates.AddAsync(childPrompt);
-            await context.SaveChangesAsync();
         }
+
+        // Seed default test user in database
+        var testEmail = "test@family.com";
+        if (!await context.Users.AnyAsync(u => u.Email == testEmail))
+        {
+            var testUser = new User
+            {
+                FullName = "Test Parent",
+                Email = testEmail,
+                MobileNumber = "9999999999",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
+                Role = "FamilyAdmin"
+            };
+
+            var testFamily = new Family
+            {
+                FamilyName = "Test Family",
+                PrimaryLanguage = "Hindi",
+                Country = "India"
+            };
+
+            var parentMember = new FamilyMember
+            {
+                FamilyId = testFamily.Id,
+                UserId = testUser.Id,
+                FullName = "Test Parent",
+                Nickname = "Papa",
+                Relation = "Father",
+                MemberType = MemberType.Parent,
+                PreferredLanguage = "Hindi"
+            };
+
+            var childMember = new FamilyMember
+            {
+                FamilyId = testFamily.Id,
+                FullName = "Aarav Ranjan",
+                Nickname = "Aarav",
+                Relation = "Son",
+                MemberType = MemberType.Child,
+                DateOfBirth = DateTime.UtcNow.AddYears(-8), // 8 years old (> 5 trigger active)
+                PreferredLanguage = "Hindi",
+                ClassName = "Class 3",
+                SchoolBoard = "CBSE",
+                InterestsJson = JsonSerializer.Serialize(new List<string> { "Dinosaurs", "Space" }),
+                LearningGoalsJson = JsonSerializer.Serialize(new List<string> { "Learn multiplication table of 7" })
+            };
+
+            testFamily.Members.Add(parentMember);
+            testFamily.Members.Add(childMember);
+
+            await context.Users.AddAsync(testUser);
+            await context.Families.AddAsync(testFamily);
+        }
+
+        await context.SaveChangesAsync();
     }
 }
