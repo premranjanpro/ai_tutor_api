@@ -119,4 +119,21 @@ public class FamilyService : IFamilyService
             learningGoals
         );
     }
+
+    public async Task<ApiResponse<bool>> UpdateCustomInstructionsAsync(Guid userId, string instructions)
+    {
+        var adminMember = await _context.FamilyMembers
+            .Include(m => m.Family)
+            .FirstOrDefaultAsync(m => m.UserId == userId);
+
+        if (adminMember == null || adminMember.Family == null)
+        {
+            return ApiResponse<bool>.FailureResponse("Family context not found.");
+        }
+
+        adminMember.Family.ParentCustomInstructions = instructions;
+        await _context.SaveChangesAsync();
+
+        return ApiResponse<bool>.SuccessResponse(true, "AI training guidelines updated successfully.");
+    }
 }

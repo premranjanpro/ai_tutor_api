@@ -77,6 +77,11 @@ public class AuthService : IAuthService
             return ApiResponse<AuthResponse>.FailureResponse("Invalid email or password.");
         }
 
+        if (!user.IsActive)
+        {
+            return ApiResponse<AuthResponse>.FailureResponse("Your account has been blocked by the Administrator.");
+        }
+
         return await GenerateAuthResponseAsync(user);
     }
 

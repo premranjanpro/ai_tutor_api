@@ -9,4 +9,5 @@ public interface IFamilyService
 {
     Task<ApiResponse<FamilyResponse>> GetFamilyByUserIdAsync(Guid userId);
     Task<ApiResponse<FamilyMemberResponse>> AddFamilyMemberAsync(Guid userId, AddFamilyMemberRequest request);
+    Task<ApiResponse<bool>> UpdateCustomInstructionsAsync(Guid userId, string instructions);
 }

@@ -54,6 +54,24 @@ public class FamilyController : ControllerBase
         return Ok(response);
     }
 
+    [HttpPost("custom-instructions")]
+    public async Task<ActionResult<ApiResponse<bool>>> UpdateCustomInstructions([FromBody] UpdateInstructionsRequest request)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty)
+        {
+            return Unauthorized(ApiResponse<bool>.FailureResponse("User ID context not found."));
+        }
+
+        var response = await _familyService.UpdateCustomInstructionsAsync(userId, request.Instructions);
+        if (!response.Success)
+        {
+            return BadRequest(response);
+        }
+
+        return Ok(response);
+    }
+
     private Guid GetCurrentUserId()
     {
         var sub = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value 
@@ -72,3 +90,5 @@ public class FamilyController : ControllerBase
         return Guid.Empty;
     }
 }
+
+public record UpdateInstructionsRequest(string Instructions);

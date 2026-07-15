@@ -36,11 +36,30 @@ public class AiOrchestrator : IAiOrchestrator
         }
 
         var member = await _context.FamilyMembers
+            .Include(m => m.Family)
             .FirstOrDefaultAsync(m => m.Id == session.MemberId, cancellationToken);
 
         if (member == null)
         {
             return ApiResponse<string>.FailureResponse("Family member associated with this session not found.");
+        }
+
+        // YouTube screen-time blocker logic:
+        var cleanMsg = userMessage.ToLowerInvariant();
+        if (cleanMsg.Contains("youtube") || cleanMsg.Contains("watch movie") || cleanMsg.Contains("play movie"))
+        {
+            var custom = member.Family?.ParentCustomInstructions ?? string.Empty;
+            if (custom.ToLowerInvariant().Contains("1 hour") || custom.ToLowerInvariant().Contains("youtube"))
+            {
+                var response = "Beep Boop! Papa ke custom rule ke mutabik, abhi YouTube blocked hai. Aapko mobile milega study ke 1 hour baad. Pehle ABC alphabets ya 1+2 complete kijiye!";
+                
+                var uMsg = new ConversationMessage { SessionId = session.Id, SenderType = SenderType.User, MessageText = userMessage };
+                var aMsg = new ConversationMessage { SessionId = session.Id, SenderType = SenderType.Ai, MessageText = response };
+                await _context.ConversationMessages.AddRangeAsync(new[] { uMsg, aMsg }, cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                return ApiResponse<string>.SuccessResponse(response, "YouTube request intercepted by parent custom constraints.");
+            }
         }
 
         // Get system prompt template
@@ -85,6 +104,11 @@ public class AiOrchestrator : IAiOrchestrator
 
     private static string BuildSystemPrompt(string template, FamilyMember member)
     {
+        var custom = member.Family?.ParentCustomInstructions ?? string.Empty;
+        var parentRules = string.IsNullOrWhiteSpace(custom)
+            ? "No additional parent instructions."
+            : $"CRITICAL PARENT CUSTOM GUIDELINES:\n{custom}";
+
         return template
             .Replace("{{member_name}}", string.IsNullOrWhiteSpace(member.Nickname) ? member.FullName : member.Nickname)
             .Replace("{{age}}", member.Age.ToString())
@@ -94,12 +118,11 @@ public class AiOrchestrator : IAiOrchestrator
             .Replace("{{learning_goals}}", member.LearningGoalsJson)
             .Replace("{{current_datetime}}", DateTime.UtcNow.ToString("F"))
             .Replace("{{today_study_plan}}", "Review multiplication tables and basic addition.")
-            .Replace("{{approved_memories}}", "No memories saved yet.");
+            .Replace("{{approved_memories}}", $"No memories saved yet.\n\n{parentRules}");
     }
 
     private static string BuildUserPrompt(IEnumerable<ConversationMessage> messages)
     {
-        // Take last 6 messages to keep context short and relevant
         var list = messages.OrderByDescending(m => m.CreatedAt).Take(6).Reverse().ToList();
         
         var prompt = "Recent conversation history:\n";

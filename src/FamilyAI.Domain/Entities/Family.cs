@@ -11,6 +11,7 @@ public class Family
     public string SecondaryLanguage { get; set; } = string.Empty;
     public string Country { get; set; } = string.Empty;
     public string TimeZone { get; set; } = "UTC";
+    public string ParentCustomInstructions { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<FamilyMember> Members { get; set; } = new List<FamilyMember>();
