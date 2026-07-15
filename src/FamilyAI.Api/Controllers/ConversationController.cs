@@ -72,7 +72,7 @@ public class ConversationController : ControllerBase
     public async Task<ActionResult<ApiResponse<string>>> SendMessage(Guid id, [FromBody] SendMessageRequest request, CancellationToken cancellationToken)
     {
         // First run the intent parser
-        var parsed = _intentParser.ParseIntent(request.MessageText);
+        var parsed = await _intentParser.ParseIntentAsync(request.MessageText, cancellationToken);
         if (parsed.IsCommand)
         {
             var responseText = $"COMMAND:{parsed.CommandType}:{parsed.Target}|{parsed.CustomResponse}";

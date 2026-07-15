@@ -1,8 +1,11 @@
+using System.Threading;
+using System.Threading.Tasks;
+
 namespace FamilyAI.Application.Common.Interfaces;
 
 public interface IIntentParser
 {
-    ParsedIntent ParseIntent(string text);
+    Task<ParsedIntent> ParseIntentAsync(string text, CancellationToken cancellationToken = default);
 }
 
 public class ParsedIntent

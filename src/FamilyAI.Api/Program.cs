@@ -32,6 +32,7 @@ try
     builder.Services.AddScoped<IAuthService, AuthService>();
     builder.Services.AddScoped<IFamilyService, FamilyService>();
     builder.Services.AddScoped<IAiProvider, GeminiProvider>();
+    builder.Services.AddScoped<ICommandAiProvider, CommandAiProvider>();
     builder.Services.AddScoped<IAiOrchestrator, AiOrchestrator>();
     builder.Services.AddScoped<IIntentParser, IntentParser>();
 
