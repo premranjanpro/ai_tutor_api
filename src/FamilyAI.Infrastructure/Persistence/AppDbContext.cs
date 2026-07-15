@@ -16,6 +16,7 @@ public class AppDbContext : DbContext
     public DbSet<AiPromptTemplate> AiPromptTemplates => Set<AiPromptTemplate>();
     public DbSet<ConversationSession> ConversationSessions => Set<ConversationSession>();
     public DbSet<ConversationMessage> ConversationMessages => Set<ConversationMessage>();
+    public DbSet<FamilyMemory> FamilyMemories => Set<FamilyMemory>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
