@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: family_ai_postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ai_tutor
+      POSTGRES_USER: pruva
+      POSTGRES_PASSWORD: change_this_password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pruva -d ai_tutor"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
